@@ -1,0 +1,502 @@
+<%- include('./header', {}) %>
+<script type="text/javascript" src="/js/nicEdit-latest.js"></script>
+
+<title><%= __('admin.head.admin') %> - <%= ogp.title %></title>
+<script>
+var user_limit = 10;
+var user_page = 0;
+var doc_limit = 10;
+var doc_page = 0;
+var attachment_limit = 10;
+var attachment_page = 0;
+$(function(){
+<%
+if( user.role == 0 ){
+%>
+  getUsers();
+<%
+}
+%>
+
+  //getDocuments();
+});
+
+function getUsers(){
+  $('#users_table_tbody').html( '' );
+  var obj = getBusyOverlay( 'viewport', {color:'black', opacity:0.5, text:'loading', style:'text-decoration:blink; font-weight:bold; font-size:12px; color:white;' } );
+  $.ajax({
+    type: 'GET',
+    url: '/docs?type=user&limit=' + user_limit + '&offset=' + ( user_limit * user_page ),
+    success: function( result ){
+      obj.remove();
+      //console.log( result );
+      if( result.status ){
+        $('#users_table_tbody').append( tr );
+        var users = result.docs;
+        var cnt = 1;
+        users.forEach( function( user ){
+          var tr = '<tr>'
+            + '<td>' + ( cnt ++ ) + '</td>'
+            + '<td>' + user._id + '</td>'
+            + '<td>' + user.password + '</td>'
+            + '<td>' + user.name + '</td>'
+            + '<td>' + user.email + '</td>'
+            + '<td>' + user.role + '</td>'
+            + '<td>' + timestamp2datetime( user.timestamp ) + '</td>'
+            + '<td>'
+            + "<input type='button' value='<%= __('users.buttonlabel.edit') %>' class='btn btn-success' onClick='editUser(" + JSON.stringify(user) + ")'>"
+            + "<input type='button' value='<%= __('users.buttonlabel.delete') %>' class='btn btn-warning' onClick='deleteUser(\"" + user._id + "\")'/>"
+            + '</td>'
+            + '</tr>';
+          $('#users_table_tbody').append( tr );
+        });
+        var tr = "<tr>"
+          + "<td>-<input type='hidden' id='user_rev' value=''/></td>"
+          + "<td><input type='text' id='user_id' placeholder='<%= __('users.placeholder.id' ) %>'/></td>"
+          + "<td><input type='password' style='width:100px;' id='user_password' placeholder='<%= __('users.placeholder.password' ) %>'/></td>"
+          + "<td><input type='text' style='width:100px;' id='user_name' placeholder='<%= __('users.placeholder.name' ) %>'/></td>"
+          + "<td><input type='text' id='user_email' placeholder='<%= __('users.placeholder.email' ) %>'/></td>"
+          + "<td><input type='text' style='width:100px;' id='user_role' placeholder='<%= __('users.placeholder.role' ) %>'/></td>"
+          + "<td>-</td>"
+          + "<td><input type='button' class='btn btn-primary' value='<%= __('users.buttonlabel.update') %>' onClick='updateUser();'/></td>"
+          + "</tr>";
+        $('#users_table_tbody').append( tr );
+
+        //. Navigation
+        var tr =  '<tr>'
+          + '<td colspan="4" style="text-align:left;" id="user_prev">&lt;&lt;</td>'
+          + '<td colspan="4"" style="text-align:right;" id="user_next">&gt;&gt;</td>'
+          + '</tr>';
+        $('#users_table_tbody').append( tr );
+        enableUsersPrev( ( user_page > 0 ) );
+        enableUsersNext( ( users.length == user_limit ) );
+      }
+    },
+    error: function( err ){
+      obj.remove();
+      console.log( err );
+    }
+  });
+}
+
+function getDocuments(){
+  $('#documents_table_tbody').html( '' );
+  var obj = getBusyOverlay( 'viewport', {color:'black', opacity:0.5, text:'loading', style:'text-decoration:blink; font-weight:bold; font-size:12px; color:white;' } );
+  $.ajax({
+    type: 'GET',
+    url: '/docs?type=document&limit=' + doc_limit + '&offset=' + ( doc_limit * doc_page ),
+    success: function( result ){
+      //console.log( result );
+      obj.remove();
+      if( result.status ){
+        var documents = result.docs;
+        var cnt = 1;
+        documents.forEach( function( doc ){
+          var tr = '<tr>'
+            + '<td>' + ( ( doc_page * doc_limit ) + ( cnt ++ ) ) + '</td>'
+            + '<td>' + doc.title + '</td>'
+            + '<td>' + doc.body + '</td>'
+            + '<td>' + doc.category + '</td>'
+            + '<td>' + doc.status + '</td>'
+            + '<td>' + doc.user.name + '</td>'
+            + '<td>' + timestamp2datetime( doc.timestamp ) + '</td>'
+            + '<td>'
+            + "<input type='button' value='<%= __('documents.buttonlabel.edit') %>' class='btn btn-success' onClick='editDocument(" + JSON.stringify(doc) + ")'>"
+            + "<input type='button' value='<%= __('documents.buttonlabel.delete') %>' class='btn btn-warning' onClick='deleteDocument(\"" + doc._id + "\")'/>"
+            + '</td>'
+            + '</tr>';
+          $('#documents_table_tbody').append( tr );
+        });
+        /*
+        var tr = "<tr>"
+          + "<td>-<input type='hidden' id='document_id' value=''/><input type='hidden' id='document_rev' value=''/></td>"
+          + "<td><input type='text' id='document_title' placeholder='<%= __('documents.placeholder.title' ) %>'/></td>"
+          + "<td><textarea id='document_body' name='document_body'/></textarea></td>"
+          + "<td><input type='text' style='width:100px;' id='document_category' placeholder='<%= __('documents.placeholder.category' ) %>'/></td>"
+          + "<td><input type='text' style='width:100px;' id='document_status' placeholder='<%= __('documents.placeholder.status' ) %>'/></td>"
+          + "<td>-</td>"
+          + "<td>-</td>"
+          + "<td><input type='button' class='btn btn-primary' value='<%= __('documents.buttonlabel.update') %>' onClick='updateDocument();'/></td>"
+          + "</tr>";
+        $('#documents_table_tbody').append( tr );
+        nicEditors.allTextAreas();
+        */
+
+        //. Navigation
+        var tr =  '<tr>'
+          + '<td colspan="4" style="text-align:left;" id="document_prev">&lt;&lt;</td>'
+          + '<td colspan="4"" style="text-align:right;" id="document_next">&gt;&gt;</td>'
+          + '</tr>';
+        $('#documents_table_tbody').append( tr );
+        enableDocumentsPrev( ( doc_page > 0 ) );
+        enableDocumentsNext( ( documents.length == doc_limit ) );
+
+        var editform = "<div class='container' style='padding:20px 0; font-size:8px;'><table class='table'>"
+          + "<tr><td><%= __('admin.body.documents.table.thead.title') %></td><td><input type='hidden' id='document_id' value=''/><input type='hidden' id='document_rev' value=''/><input style='width:100%;' type='text' id='document_title' placeholder='<%= __('documents.placeholder.title' ) %>'/></td></tr>"
+          + "<tr><td><%= __('admin.body.documents.table.thead.category') %></td><td><input style='width:100%;' type='text' id='document_category' placeholder='<%= __('documents.placeholder.category' ) %>'/></td></tr>"
+          + "<tr><td><%= __('admin.body.documents.table.thead.status') %></td><td><input style='width:100%;' type='text' id='document_status' placeholder='<%= __('documents.placeholder.status' ) %>'/></td></tr>"
+          + "<tr><td><%= __('admin.body.documents.table.thead.body') %></td><td><textarea id='document_body' name='document_body' style='width:800px;height:200px;'/></textarea></td></tr>"
+          + "<tr><td><%= __('admin.body.documents.table.thead.desc') %></td><td><input style='width:100%;' type='text' id='document_desc' placeholder='<%= __('documents.placeholder.desc' ) %>'/></td></tr>"
+          + "<tr><td><%= __('admin.body.documents.table.thead.image_url') %></td><td><input style='width:100%;' type='text' id='document_image_url' placeholder='<%= __('documents.placeholder.image_url' ) %>'/></td></tr>"
+          + "<tr><td colspan='2' align='right'><input type='button' class='btn btn-primary' value='<%= __('documents.buttonlabel.update') %>' onClick='updateDocument();'/></td></tr>"
+          + "</table></div>";
+        $('#documents_table_tbody').parent().parent().append( editform );
+        nicEditors.allTextAreas();
+      }
+    },
+    error: function( err ){
+      obj.remove();
+      console.log( err );
+    }
+  });
+}
+
+function logout(){
+  if( window.confirm( 'Logout?' ) ){
+    var obj = getBusyOverlay( 'viewport', {color:'black', opacity:0.5, text:'loading', style:'text-decoration:blink; font-weight:bold; font-size:12px; color:white;' } );
+    $.ajax({
+      type: 'POST',
+      url: '/logout',
+      data: {},
+      success: function( data ){
+        obj.remove();
+        window.location.href = '/';
+      },
+      error: function(){
+        obj.remove();
+        window.location.href = '/';
+      }
+    });
+  }
+}
+
+function updateUser(){
+  var id = $('#user_id').val();
+  var rev = $('#user_rev').val();
+  var password = $('#user_password').val();
+  var name = $('#user_name').val();
+  var email = $('#user_email').val();
+  var role = $('#user_role').val();
+  var data = { _id: id, type: 'user', password: password, name: name, email: email, role: role };
+  if( rev ){ data['_rev'] = rev; }
+
+  $.ajax({
+    type: 'POST',
+    url: '/user',
+    data: data,
+    success: function( data ){
+      console.log( data );
+      getUsers();
+    },
+    error: function( jqXHR, textStatus, errorThrown ){
+      console.log( textStatus );
+      console.log( errorThrown );
+      console.log( 'updateUser: error' );
+    }
+  });
+}
+
+function editUser(user){
+  $('#user_id').val( user._id );
+  $('#user_rev').val( user._rev );
+  $('#user_password').val( user.password );
+  $('#user_name').val( user.name );
+  $('#user_email').val( user.email );
+  $('#user_role').val( user.role );
+}
+
+function deleteUser(id){
+  if( window.confirm( 'Delete User?' ) ){
+    console.log( 'deleteUser(): id=' + id );
+
+    $.ajax({
+      type: 'DELETE',
+      url: '/user/' + id,
+      data: {},
+      success: function( data ){
+        getUsers();
+      },
+      error: function( jqXHR, textStatus, errorThrown ){
+        console.log( textStatus );
+        console.log( errorThrown );
+        console.log( 'updateUser: error' );
+        getUsers();
+      }
+    });
+  }
+}
+
+function updateDocument(){
+  var id = $('#document_id').val();
+  var rev = $('#document_rev').val();
+  var title = $('#document_title').val();
+  //var body = $('#document_body').html();
+  var body = nicEditors.findEditor('document_body').getContent();
+  var category = $('#document_category').val();
+  var status = $('#document_status').val();
+  var desc = $('#document_desc').val();
+  var image_url = $('#document_image_url').val();
+  var data = { _id: id, type: 'document', title: title, body: body, category: category, status: status, desc: desc, image_url: image_url };
+  if( rev ){ data['_rev'] = rev; }
+
+  $.ajax({
+    type: 'POST',
+    url: '/document',
+    data: data,
+    success: function( data ){
+      console.log( data );
+      getDocuments();
+    },
+    error: function( jqXHR, textStatus, errorThrown ){
+      console.log( textStatus );
+      console.log( errorThrown );
+      console.log( 'updateDocument: error' );
+    }
+  });
+}
+
+function editDocument(doc){
+  $('#document_id').val( doc._id );
+  $('#document_rev').val( doc._rev );
+  $('#document_title').val( doc.title );
+  //$('#document_body').val( doc.body );
+  nicEditors.findEditor('document_body').setContent(doc.body);
+  $('#document_category').val( doc.category );
+  $('#document_status').val( doc.status );
+  $('#document_user_name').val( doc.user.name );
+  $('#document_desc').val( doc.desc );
+  $('#document_image_url').val( doc.image_url );
+
+  nicEditors.allTextAreas();
+}
+
+function deleteDocument(id){
+  if( window.confirm( 'Delete Document?' ) ){
+    console.log( 'deleteDocument(): id=' + id );
+
+    $.ajax({
+      type: 'DELETE',
+      url: '/document/' + id,
+      data: {},
+      success: function( data ){
+        getDocuments();
+      },
+      error: function( jqXHR, textStatus, errorThrown ){
+        console.log( textStatus );
+        console.log( errorThrown );
+        console.log( 'updateDocument: error' );
+        getDocuments();
+      }
+    });
+  }
+}
+
+function timestamp2datetime( ts ){
+  var dt = new Date( ts );
+  var yyyy = dt.getFullYear();
+  var mm = dt.getMonth() + 1;
+  var dd = dt.getDate();
+  var hh = dt.getHours();
+  var nn = dt.getMinutes();
+  var ss = dt.getSeconds();
+  var datetime = yyyy + '-' + ( mm < 10 ? '0' : '' ) + mm + '-' + ( dd < 10 ? '0' : '' ) + dd
+    + ' ' + ( hh < 10 ? '0' : '' ) + hh + ':' + ( nn < 10 ? '0' : '' ) + nn + ':' + ( ss < 10 ? '0' : '' ) + ss;
+  return datetime;
+}
+
+function handleFileSelect( evt ){
+  $('#attachment_filename').val( '' );
+  var files = evt.target.files;
+  for( var i = 0; i < files.length; i ++ ){
+    var file = files[i];
+    //console.log( 'i = ' + i );
+    //console.log( file );
+    $('#attachment_filename').val( file.name );
+  }
+}
+
+function enableUsersPrev( b ){
+  if( b ){
+    $('#user_prev').css( 'color', '#008' );
+    $('#user_prev').css( 'cursor', 'pointer' );
+    $('#user_prev').click( function(){
+      user_page --;
+      getUsers();
+    });
+  }else{
+    $('#user_prev').css( 'color', '#ccc' );
+    $('#user_prev').css( 'cursor', 'default' );
+    $('#user_prev').click( function(){
+    });
+  }
+}
+
+function enableUsersNext( b ){
+  if( b ){
+    $('#user_next').css( 'color', '#008' );
+    $('#user_next').css( 'cursor', 'pointer' );
+    $('#user_next').click( function(){
+      user_page ++;
+      getUsers();
+    });
+  }else{
+    $('#user_next').css( 'color', '#ccc' );
+    $('#user_next').css( 'cursor', 'default' );
+    $('#user_next').click( function(){
+    });
+  }
+}
+
+function enableDocumentsPrev( b ){
+  if( b ){
+    $('#document_prev').css( 'color', '#008' );
+    $('#document_prev').css( 'cursor', 'pointer' );
+    $('#document_prev').click( function(){
+      doc_page --;
+      getDocuments();
+    });
+  }else{
+    $('#document_prev').css( 'color', '#ccc' );
+    $('#document_prev').css( 'cursor', 'default' );
+    $('#document_prev').click( function(){
+    });
+  }
+}
+
+function enableDocumentsNext( b ){
+  if( b ){
+    $('#document_next').css( 'color', '#008' );
+    $('#document_next').css( 'cursor', 'pointer' );
+    $('#document_next').click( function(){
+      doc_page ++;
+      getDocuments();
+    });
+  }else{
+    $('#document_next').css( 'color', '#ccc' );
+    $('#document_next').css( 'cursor', 'default' );
+    $('#document_next').click( function(){
+    });
+  }
+}
+</script>
+<style>
+body{
+  background-color: #668;
+}
+.index-header{
+  background-color: #336;
+  color: #ccc;
+}
+.doc{
+  width: 100%;
+  background-color: #668;
+}
+.doc-header{
+  font-size: 20px;
+  background-color: #ccf;
+  color: #666;
+  width: 100%;
+}
+.doc-body{
+  font-size: 20px;
+  background-color: #668;
+  color: #00c;
+  width: 100%;
+}
+.doc-text{
+  font-size: 20px;
+  color: #00c;
+}
+.doc-category{
+  font-size: 20px;
+  color: #0cc;
+}
+.table{
+  background-color: #eee;
+}
+a.nounderline{
+  text-decoration: none;
+}
+</style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg index-header">
+  <a href="/" class="navbar-brand" id="navbar_title"><%= ogp.title %></a>
+  <div class="collapse navbar-collapse target">
+    <ul class="navbar-nav mr-auto">
+    </ul>
+    <ul class="navbar-nav" id="navbar">
+      <li class="nav-item"><a class="nav-link" href="#" title="Logout" onClick="logout()"><span class="glyphicon glyphicon-user"></span> <%= user.name %>(Logout)</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="p-3 container" style="padding:20px 0; font-size:8px;">
+  <!-- //tab buttons -->
+  <ul class="nav nav-tabs">
+<%
+if( user.role == 0 ){
+%>
+    <li class="nav-item">
+      <a href="#tab-users" class="nav-link active" data-toggle="tab"><%= __('admin.body.tab-button.users') %></a>
+    </li>
+<%
+}
+%>
+    <li class="nav-item">
+      <a href="#tab-documents" class="nav-link<% if( user.role != 0 ){ %> active<% } %>" data-toggle="tab"><%= __('admin.body.tab-button.documents') %></a>
+    </li>
+  </ul>
+  <!-- tab buttons// -->
+
+  <!-- //tab contents -->
+  <div class="tab-content">
+<%
+if( user.role == 0 ){
+%>
+    <div class="tab-pane" id="tab-users">
+      <table class="table table-hover table-bordered" id="users_table">
+        <thead class="table-inverse">
+          <tr>
+          <th>#</th>
+          <th><%= __('admin.body.users.table.thead.id') %></th>
+          <th><%= __('admin.body.users.table.thead.password') %></th>
+          <th><%= __('admin.body.users.table.thead.name') %></th>
+          <th><%= __('admin.body.users.table.thead.email') %></th>
+          <th><%= __('admin.body.users.table.thead.role') %></th>
+          <th><%= __('admin.body.users.table.thead.timestamp') %></th>
+          <th><%= __('admin.body.users.table.thead.actions') %></th>
+          </tr>
+        </thead>
+        <tbody id="users_table_tbody">
+        </tbody>
+      </table>
+    </div>
+<%
+}
+%>
+    <div class="tab-pane<% if( user.role != 0 ){ %> active<% } %>" id="tab-documents">
+      <table class="table table-hover table-bordered" id="documents_table">
+        <thead class="table-inverse">
+          <tr>
+          <th>#</th>
+          <th><%= __('admin.body.documents.table.thead.title') %></th>
+          <th><%= __('admin.body.documents.table.thead.body') %></th>
+          <th><%= __('admin.body.documents.table.thead.category') %></th>
+          <th><%= __('admin.body.documents.table.thead.status') %></th>
+          <th><%= __('admin.body.documents.table.thead.user.name') %></th>
+          <th><%= __('admin.body.documents.table.thead.timestamp') %></th>
+          <th><%= __('admin.body.documents.table.thead.actions') %></th>
+          </tr>
+        </thead>
+        <tbody id="documents_table_tbody">
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <!-- tab contents// -->
+</div>
+
+
+<%- include('./footer', {}) %>

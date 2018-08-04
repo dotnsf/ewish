@@ -1,0 +1,25 @@
+{
+    "name": "ewish",
+    "version": "0.1.0",
+    "scripts": {
+        "start": "node app.js"
+    },
+    "dependencies": {
+        "body-parser": "~1.18.x",
+        "cfenv": "~1.0.0",
+        "@cloudant/cloudant": "^2.0.1",
+        "ejs": "^2.3.4",
+        "express": "4.1.x",
+        "express-session": "1.15.x",
+        "i18n": "0.8.3",
+        "jsonwebtoken": "7.4.x",
+        "multer": "1.1.x",
+        "oauth": "^0.9.15",
+        "request": "2.83.0",
+        "uuid": "3.3.0"
+    },
+    "repository": {},
+    "engines": {
+        "node": "4.x"
+    }
+}

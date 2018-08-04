@@ -1,0 +1,25 @@
+<%- include('./header', {}) %>
+
+<title><%= __('login.head.title') %></title>
+<style>
+body{
+  background-color: #ddf;
+}
+</style>
+</head>
+<body>
+<div class="row title">
+  <div class="container">
+    <div class="mx-auto" style="width: 400px">
+    <form id="loginform" class="form-signin" method="POST" action="./login">
+    <h2><%= __('login.login') %></h2>
+    <div><small style="color: #ff0000;"><%= message %></small></div>
+    <input type="text" class="form-control clear" id="user_id" name="user_id" placeholder="<%= __('login.placeholder.userid') %>" required="" autofocus=""/><br/>
+    <input type="password" class="form-control clear" id="password" name="password" placeholder="<%= __('login.placeholder.password') %>" required=""/><br/>
+    <button class="btn btn-lg btn-primary btn-block" type="submit"><%= __('login.login') %></button>
+    </form>
+    </div>
+  </div>
+</div>
+
+<%- include('./footer', {}) %>

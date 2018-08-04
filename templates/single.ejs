@@ -1,0 +1,114 @@
+<%- include('./header', {}) %>
+
+<title><%= title %></title>
+<!-- //OGP -->
+<meta property="og:type" content="website"/>
+<meta property="og:title" content="<%= title %>"/>
+<meta property="og:site_name" content="<%= config.title %>"/>
+<meta property="og:url" content="<%= config.url %>single/<%= id %>"/>
+<% if( image_url ){ %>
+<meta property="og:image" content="<%= image_url %>"/>
+<% }else if( config && config.image_url ){ %>
+<meta property="og:image" content="<%= config.image_url %>"/>
+<% } %>
+<% if( desc ){ %>
+<meta property="og:description" content="<%= desc %>"/>
+<% }else if( config && config.desc ){ %>
+<meta property="og:description" content="<%= config.desc %>"/>
+<% } %>
+<!-- OGP// -->
+<script>
+$(function(){
+  //. Share Icons
+  var enc_title = encodeURIComponent( '<%= title %>' );
+  var enc_url = encodeURIComponent( '<%= config.url %>single/<%= id %>' );
+  $('#navbar').append( '<li class="nav-item"><a href="http://twitter.com/share?url=' + enc_url + '&text=' + enc_title + '" target="_blank"><img src="/images/tw.png"/></a></li>' );
+  $('#navbar').append( '<li class="nav-item"><a href="http://www.facebook.com/sharer.php?u=' + enc_url + '&amp;t=' + enc_title + '" target="_blank" rel="nofollow"><img src="/images/fb.png"/></a></li>' );
+});
+
+function timestamp2datetime( ts ){
+  var dt = new Date( ts );
+  var yyyy = dt.getFullYear();
+  var mm = dt.getMonth() + 1;
+  var dd = dt.getDate();
+  var hh = dt.getHours();
+  var nn = dt.getMinutes();
+  var ss = dt.getSeconds();
+  var datetime = yyyy + '-' + ( mm < 10 ? '0' : '' ) + mm + '-' + ( dd < 10 ? '0' : '' ) + dd
+    + ' ' + ( hh < 10 ? '0' : '' ) + hh + ':' + ( nn < 10 ? '0' : '' ) + nn + ':' + ( ss < 10 ? '0' : '' ) + ss;
+  return datetime;
+}
+</script>
+<style>
+body{
+  background-color: #ddf;
+}
+.index-header{
+  background-color: #cce;
+  color: #333;
+}
+.jumbotron{
+  background-color: #5aa;
+  color: #fff;
+}
+.doc{
+  width: 100%;
+  background-color: #eef;
+}
+.doc-header{
+  font-size: 20px;
+  background-color: #338;
+  color: #ccc;
+  width: 100%;
+}
+.doc-body{
+  font-size: 20px;
+  background-color: #eef;
+  color: #003;
+  width: 100%;
+}
+.doc-text{
+  font-size: 20px;
+  color: #008;
+}
+.doc-category{
+  font-size: 20px;
+  color: #088;
+}
+a.nounderline{
+  text-decoration: none;
+}
+</style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg index-header">
+  <a href="/" class="navbar-brand"><%= config.title %></a>
+  <div class="collapse navbar-collapse target">
+    <ul class="navbar-nav mr-auto">
+    </ul>
+    <ul class="navbar-nav" id="navbar">
+      <!--
+      <li class="nav-item">
+        <a href="http://twitter.com/share?url=<%= config.url %>&text=<%= config.title %>" target="_blank">twitter</a>
+      </li>
+      <li class="nav-item">
+        <a href="http://www.facebook.com/sharer.php?u=<%= config.url %>&amp;t=<%= config.title %>" target="_blank" rel="nowfollow">facebook</a>
+      </li>
+      -->
+    </ul>
+  </div>
+</nav>
+
+<div class="container" id="document_tile" style="padding:20px 0; font-size:8px;">
+  <div class="doc">
+    <div class="doc-header"><%= title %></div>
+    <div class="doc-body">
+      <p class="doc-text"><%- body %></p>
+      <p class="doc-text" style="text-align:right;"><%= datetime %>(<%= ( user ? user.name : '???' ) %>)</p>
+      <p id="doc_category" class="doc-category" style="text-align:right;"><%= category %></p>
+    </div>
+  </div>
+</div>
+
+<%- include('./footer', {}) %>

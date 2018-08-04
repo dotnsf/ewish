@@ -1,0 +1,380 @@
+<%- include('./header', {}) %>
+<script type="text/javascript" src="/js/nicEdit-latest.js"></script>
+
+<title><%= ogp.title %></title>
+<!-- //OGP -->
+<meta property="og:type" content="website"/>
+<meta property="og:title" content="<%= ogp.title %>"/>
+<meta property="og:site_name" content="<%= ogp.title %>"/>
+<meta property="og:url" content="<%= ogp.url %>"/>
+<meta property="og:image" content="<%= ogp.image_url %>"/>
+<meta property="og:description" content="<%= ogp.desc %>"/>
+<!-- OGP// -->
+<script>
+var doc_q = '';
+var doc_limit = 3;
+var doc_page = 0;
+$(function(){
+  //. Share Icons
+  var enc_title = encodeURIComponent( '<%= ogp.title %>' );
+  var enc_url = encodeURIComponent( '<%= ogp.url %>' );
+  $('#navbar').append( '<li class="nav-item"><a href="http://twitter.com/share?url=' + enc_url + '&text=' + enc_title + '" target="_blank"><img src="/images/tw.png"/></a></li>' );
+  $('#navbar').append( '<li class="nav-item"><a href="http://www.facebook.com/sharer.php?u=' + enc_url + '&amp;t=' + enc_title + '" target="_blank" rel="nofollow"><img src="/images/fb.png"/></a></li>' );
+
+<%
+if( user != null ){
+%>
+  //. ログインしている
+  var dropdown = '<div class="dropdown"><button type="button" class="btn dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-user"></span><!-- <img width="20" height="20" src="https://twitter.com/<%= user.screen_name %>/profile_image?size=normal"/>--> <%= user.screen_name %></button>'
+    + '<div class="dropdown-menu"><a class="dropdown-item" class="nav-link" href="#" title="logout" onClick="logout()">Logout</a></div>'
+    + '</div>';
+  $('#navbar').append( '<li class="nav-item">' + dropdown + '</li>' );
+
+  getDocuments();
+<%
+}else{
+%>
+  //. ログインしていない
+  $('#navbar').append( '<li class="nav-item"><a class="nav-link" href="#" onClick="login()"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>' );
+<%
+}
+%>
+
+  $('#search_form').submit( function(){
+    doc_q = $('#q').val();
+    if( doc_q ){
+      doc_page = 0;
+      $('#documents_tile').html( '' );
+      var obj = getBusyOverlay( 'viewport', {color:'black', opacity:0.5, text:'loading', style:'text-decoration:blink; font-weight:bold; font-size:12px; color:white;' } );
+      $.ajax({
+        type: 'GET',
+        url: '/searchDocuments?q=' + doc_q + '&limit=' + doc_limit + '&offset=' + ( doc_limit * doc_page ),
+        success: function( result ){
+          obj.remove();
+          if( result.status ){
+            var docs = result.docs.rows;
+            docs.forEach( function( doc ){
+              var _doc = doc.doc;
+
+              div = '<div class="doc">'
+                + '<div class="doc-header">'
+                + '<a class="nounderline" target="_blank" href="./attachment/' + _doc._id + '">' + _doc.filename + '</a>'
+                + "<span class='doc-header-span'><input type='button' class='btn btn-xs btn-info doc-header-btn' value='<%= __('documents.buttonlabel.edit') %>' onClick='editDocument(" + JSON.stringify( _doc ) + ");'/></span>"
+                + '</div>'
+                + '<div class="doc-body">'
+                + '<p class="doc-text">' + _doc.body + '</p>'
+                + '<p class="doc-text" style="text-align:right;">' + timestamp2datetime( _doc.timestamp ) + '(' + _doc.user.screen_name + ')</p>'
+                + '</div>'
+                + '</div>';
+
+              $('#documents_tile').append( div );
+            });
+
+            //. Navigation
+            /*
+            var table = '<table class="table">'
+              + '<tr>'
+              + '<td style="text-align:left;" id="document_prev">&lt;&lt;</td>'
+              + '<td style="text-align:right;" id="document_next">&gt;&gt;</td>'
+              + '</tr>'
+              + '</table>';
+            $('#documents_tile').append( table );
+            enablePrev( ( doc_page > 0 ) );
+            enableNext( ( docs.length == doc_limit ) );
+            */
+
+            var editform = "<div class='edit-doc' style='padding:20px 0; font-size:8px;'><input type='hidden' id='doc_id' value=''/><input type='hidden' id='doc_rev' value=''/><input type='hidden' id='doc_status' value=''/>"
+              + "<div class='edit-doc-header'><form id='form1' enctype='multipart/form-data'><input type='file' name='file' id='file'/></form></div>"
+              + "<div class='edit-doc-body'><textarea id='doc_body' name='doc_body' style='width:800px;height:200px;'></textarea></div>"
+              + "<div class='edit-doc-tos'><input type='text' name='doc_tos' id='doc_tos' placeholder='<%= __('documents.placeholder.tos') %>' value=''/></div>"
+              + "</div>"
+              + "<input type='button' class='btn btn-primary' value='<%= __('documents.buttonlabel.update') %>' onClick='updateDocument();'/>";
+            $('#documents_tile').append( editform );
+            nicEditors.allTextAreas();
+          }
+        },
+        error: function( jqXHR, textStatus, errorThrown ){
+          obj.remove();
+          console.log( textStatus );
+          console.log( errorThrown );
+          console.log( 'searchDocuments: error' );
+        }
+      });
+    }
+
+    return false;
+  });
+});
+
+function getDocuments(){
+  $('#documents_tile').html( '' );
+  var obj = getBusyOverlay( 'viewport', {color:'black', opacity:0.5, text:'loading', style:'text-decoration:blink; font-weight:bold; font-size:12px; color:white;' } );
+  $.ajax({
+    type: 'GET',
+    url: '/docs?type=document&limit=' + doc_limit + '&offset=' + ( doc_limit * doc_page ),
+    success: function( result ){
+      obj.remove();
+      if( result.status ){
+        var documents = result.docs;
+        documents.forEach( function( doc ){
+          div = '<div class="doc">'
+            + '<div class="doc-header">'
+            + '<a class="nounderline" target="_blank" href="./attachment/' + doc._id + '">' + doc.filename + '</a>'
+            + "<span class='doc-header-span'><input type='button' class='btn btn-xs btn-info doc-header-btn' value='<%= __('documents.buttonlabel.edit') %>' onClick='editDocument(" + JSON.stringify( doc ) + ");'/><input type='button' class='btn btn-xs btn-warning doc-header-btn' value='<%= __('documents.buttonlabel.delete') %>' onClick='deleteDocument(\"" + doc._id + "\");'/></span>"
+            + '</div>'
+            + '<div class="doc-body">'
+            + '<p class="doc-text">' + doc.body + '</p>'
+            + '<p class="doc-text" style="text-align:right;">' + timestamp2datetime( doc.timestamp ) + '(' + doc.user.screen_name + ')</p>'
+            + '</div>'
+            + '</div>';
+
+          $('#documents_tile').append( div );
+        });
+
+        //. Navigation
+        var table = '<table class="table">'
+          + '<tr>'
+          + '<td style="text-align:left;" id="document_prev">&lt;&lt;</td>'
+          + '<td style="text-align:right;" id="document_next">&gt;&gt;</td>'
+          + '</tr>'
+          + '</table>';
+        $('#documents_tile').append( table );
+        enablePrev( ( doc_page > 0 ) );
+        enableNext( ( documents.length == doc_limit ) );
+
+        var editform = "<div class='edit-doc' style='padding:20px 0; font-size:8px;'><input type='hidden' id='doc_id' value=''/><input type='hidden' id='doc_rev' value=''/><input type='hidden' id='doc_status' value=''/>"
+          + "<div class='edit-doc-header'><form id='form1' enctype='multipart/form-data'><input type='file' name='file' id='file'/></form></div>"
+          + "<div class='edit-doc-body'><textarea id='doc_body' name='doc_body' style='width:800px;height:200px;'></textarea></div>"
+          + "<div class='edit-doc-tos'><input type='text' name='doc_tos' id='doc_tos' placeholder='<%= __('documents.placeholder.tos') %>' value=''/></div>"
+          + "</div>"
+          + "<input type='button' class='btn btn-primary' value='<%= __('documents.buttonlabel.update') %>' onClick='updateDocument();'/>";
+        $('#documents_tile').append( editform );
+        nicEditors.allTextAreas();
+      }
+    },
+    error: function( err ){
+      obj.remove();
+      console.log( err );
+    }
+  });
+}
+
+function enablePrev( b ){
+  if( b ){
+    $('#document_prev').css( 'color', '#008' );
+    $('#document_prev').css( 'cursor', 'pointer' );
+    $('#document_prev').click( function(){
+      doc_page --;
+      getDocuments();
+    });
+  }else{
+    $('#document_prev').css( 'color', '#ccc' );
+    $('#document_prev').css( 'cursor', 'default' );
+    $('#document_prev').click( function(){
+    });
+  }
+}
+
+function enableNext( b ){
+  if( b ){
+    $('#document_next').css( 'color', '#008' );
+    $('#document_next').css( 'cursor', 'pointer' );
+    $('#document_next').click( function(){
+      doc_page ++;
+      getDocuments();
+    });
+  }else{
+    $('#document_next').css( 'color', '#ccc' );
+    $('#document_next').css( 'cursor', 'default' );
+    $('#document_next').click( function(){
+    });
+  }
+}
+
+function logout(){
+  if( window.confirm( 'Logout?' ) ){
+    var obj = getBusyOverlay( 'viewport', {color:'black', opacity:0.5, text:'loading', style:'text-decoration:blink; font-weight:bold; font-size:12px; color:white;' } );
+    $.ajax({
+      type: 'POST',
+      url: '/logout',
+      data: {},
+      success: function( data ){
+        obj.remove();
+        window.location.href = '/';
+      },
+      error: function(){
+        obj.remove();
+        window.location.href = '/';
+      }
+    });
+  }
+}
+
+function login(){
+  //window.location.href = '/login';
+  window.location.href = '/twitter';
+}
+
+function timestamp2datetime( ts ){
+  var dt = new Date( ts );
+  var yyyy = dt.getFullYear();
+  var mm = dt.getMonth() + 1;
+  var dd = dt.getDate();
+  var hh = dt.getHours();
+  var nn = dt.getMinutes();
+  var ss = dt.getSeconds();
+  var datetime = yyyy + '-' + ( mm < 10 ? '0' : '' ) + mm + '-' + ( dd < 10 ? '0' : '' ) + dd
+    + ' ' + ( hh < 10 ? '0' : '' ) + hh + ':' + ( nn < 10 ? '0' : '' ) + nn + ':' + ( ss < 10 ? '0' : '' ) + ss;
+  return datetime;
+}
+
+function updateDocument(){
+  var form = $('#form1').get()[0];
+  var data = new FormData( form );
+
+  var id = $('#doc_id').val();
+  var rev = $('#doc_rev').val();
+  //var body = $('#document_body').html();
+  var body = nicEditors.findEditor('doc_body').getContent();
+  var tos = $('#doc_tos').val();
+  //var status = $('#doc_status').val();
+
+  data.append( '_id', id );
+  data.append( 'type', 'attachment' );
+  data.append( 'body', body );
+  data.append( 'tos', tos.split( ',' ) );
+  data.append( 'status', 0 );
+
+  if( rev ){ data.append( '_rev', rev ); }
+
+  $.ajax({
+    type: 'POST',
+    url: '/document',
+    data: data,
+    processData: false,
+    contentType: false,
+    dataType: 'json',
+    success: function( data ){
+      console.log( data );
+      getDocuments();
+    },
+    error: function( jqXHR, textStatus, errorThrown ){
+      console.log( textStatus );
+      console.log( errorThrown );
+      console.log( 'updateDocument: error' );
+    }
+  });
+}
+
+function editDocument(doc){
+  //console.log( doc );
+
+  $('#doc_id').val( doc._id );
+  $('#doc_rev').val( doc._rev );
+  //$('#doc_body').val( doc.body );
+  nicEditors.findEditor('doc_body').setContent(doc.body);
+  $('#doc_tos').val( doc.tos.join(',') );
+  $('#doc_status').val( doc.status );
+
+  nicEditors.allTextAreas();
+}
+
+function deleteDocument(id){
+  if( window.confirm( 'delete ' + id + ' ?' ) ){
+    $.ajax({
+      type: 'DELETE',
+      url: '/document/' + id,
+      success: function( data ){
+        console.log( data );
+        getDocuments();
+      },
+      error: function( jqXHR, textStatus, errorThrown ){
+        console.log( textStatus );
+        console.log( errorThrown );
+        console.log( 'deleteDocument: error' );
+      }
+    });
+  }
+}
+</script>
+<style>
+body{
+  background-color: #ddf;
+}
+.index-header{
+  background-color: #cce;
+  color: #333;
+}
+.jumbotron{
+  margin: auto;
+  width: 90%;
+  background-color: #5aa;
+  color: #fff;
+}
+.doc{
+  width: 100%;
+  background-color: #eef;
+}
+.doc-header{
+  font-size: 20px;
+  background-color: #338;
+  color: #ccc;
+  width: 100%;
+}
+.doc-header-span{
+  float: right;
+}
+.doc-header-btn{
+  height: 30px;
+}
+.doc-body{
+  font-size: 20px;
+  background-color: #eef;
+  color: #003;
+  width: 100%;
+}
+.doc-text{
+  font-size: 20px;
+  color: #008;
+}
+.doc-category{
+  font-size: 20px;
+  color: #088;
+  cursor: pointer;
+}
+a.nounderline{
+  text-decoration: none;
+}
+</style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-light index-header">
+  <a href="/" class="navbar-brand"><%= ogp.title %></a>
+  <div class="collapse navbar-collapse target">
+    <ul class="navbar-nav mr-auto">
+    </ul>
+    <ul class="navbar-nav" id="navbar">
+      <li class="nav-item">
+        <form id="search_form">
+          <div class="form-group">
+            <input type="text" name="q" id="q" class="form-control" placeholder="search"/>
+          </div>
+        </form>
+      </li>
+      <!--
+      <li class="nav-item">
+        <a href="http://twitter.com/share?url=<%= ogp.url %>&text=<%= ogp.title %>" target="_blank">twitter</a>
+      </li>
+      <li class="nav-item">
+        <a href="http://www.facebook.com/sharer.php?u=<%= ogp.url %>&amp;t=<%= ogp.title %>" target="_blank" rel="nowfollow">facebook</a>
+      </li>
+      -->
+    </ul>
+  </div>
+</nav>
+
+<div class="container" id="documents_tile" style="padding:20px 0; font-size:8px;">
+</div>
+
+<%- include('./footer', {}) %>
