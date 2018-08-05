@@ -59,7 +59,19 @@ if( user != null ){
               div = '<div class="doc">'
                 + '<div class="doc-header">'
                 + '<a class="nounderline" target="_blank" href="./attachment/' + _doc._id + '">' + _doc.filename + '</a>'
-                + "<span class='doc-header-span'><input type='button' class='btn btn-xs btn-info doc-header-btn' value='<%= __('documents.buttonlabel.edit') %>' onClick='editDocument(" + JSON.stringify( _doc ) + ");'/></span>"
+                + "<span class='doc-header-span'>";
+
+<% if( user && user.screen_name ){ %>
+              if( _doc.user.screen_name == "<%= user.screen_name %>" ){
+                div += "<input type='button' class='btn btn-xs btn-info doc-header-btn' value='<%= __('documents.buttonlabel.edit') %>' onClick='editDocument(" + JSON.stringify( _doc ) + ");'/><input type='button' class='btn btn-xs btn-warning doc-header-btn' value='<%= __('documents.buttonlabel.delete') %>' onClick='deleteDocument(\"" + _doc._id + "\");'/>";
+              }else{
+                if( _doc.status == 0 ){
+                  div += "<input type='button' class='btn btn-xs btn-danger doc-header-btn' value='<%= __('documents.buttonlabel.changestatus') %>' onClick='changeStatusDocument(\"" + _doc._id + "\");'/>";
+                }
+              }
+<% } %>
+
+              div += "</span>"
                 + '</div>'
                 + '<div class="doc-body">'
                 + '<p class="doc-text">' + _doc.body + '</p>'
@@ -120,7 +132,19 @@ function getDocuments(){
           div = '<div class="doc">'
             + '<div class="doc-header">'
             + '<a class="nounderline" target="_blank" href="./attachment/' + doc._id + '">' + doc.filename + '</a>'
-            + "<span class='doc-header-span'><input type='button' class='btn btn-xs btn-info doc-header-btn' value='<%= __('documents.buttonlabel.edit') %>' onClick='editDocument(" + JSON.stringify( doc ) + ");'/><input type='button' class='btn btn-xs btn-warning doc-header-btn' value='<%= __('documents.buttonlabel.delete') %>' onClick='deleteDocument(\"" + doc._id + "\");'/></span>"
+            + "<span class='doc-header-span'>";
+
+<% if( user && user.screen_name ){ %>
+          if( doc.user.screen_name == "<%= user.screen_name %>" ){
+            div += "<input type='button' class='btn btn-xs btn-info doc-header-btn' value='<%= __('documents.buttonlabel.edit') %>' onClick='editDocument(" + JSON.stringify( doc ) + ");'/><input type='button' class='btn btn-xs btn-warning doc-header-btn' value='<%= __('documents.buttonlabel.delete') %>' onClick='deleteDocument(\"" + doc._id + "\");'/>";
+          }else{
+            if( doc.status == 0 ){
+              div += "<input type='button' class='btn btn-xs btn-danger doc-header-btn' value='<%= __('documents.buttonlabel.changestatus') %>' onClick='changeStatusDocument(\"" + doc._id + "\");'/>";
+            }
+          }
+<% } %>
+
+          div += "</span>"
             + '</div>'
             + '<div class="doc-body">'
             + '<p class="doc-text">' + doc.body + '</p>'
@@ -296,6 +320,25 @@ function deleteDocument(id){
     });
   }
 }
+
+function changeStatusDocument(id){
+  if( window.confirm( 'change status ' + id + ' ?' ) ){
+    $.ajax({
+      type: 'POST',
+      url: '/document/status/' + id,
+      success: function( data ){
+        console.log( data );
+        getDocuments();
+      },
+      error: function( jqXHR, textStatus, errorThrown ){
+        console.log( textStatus );
+        console.log( errorThrown );
+        console.log( 'deleteDocument: error' );
+      }
+    });
+  }
+}
+</script>
 </script>
 <style>
 body{

@@ -38,5 +38,6 @@
 	"admin.body.documents.table.thead.user.name": "user.name",
 	"admin.body.documents.table.thead.timestamp": "timestamp",
 	"admin.body.documents.table.thead.actions": "actions",
-	"documents.placeholder.tos": "tos"
+	"documents.placeholder.tos": "tos",
+	"documents.buttonlabel.changestatus": "change status"
 }

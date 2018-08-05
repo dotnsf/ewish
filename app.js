@@ -561,7 +561,7 @@ app.get( '/docs', function( req, res ){
               body.rows.forEach( function( doc ){
                 var _doc = JSON.parse(JSON.stringify(doc.doc));
                 if( _doc._id.indexOf( '_' ) !== 0 ){
-                    /*
+                  /* Codes for internal users
                   if( !type || _doc.type == type ){
                     if( type == 'user' && ( user.role == 0 || _doc._id == user._id ) ){
                       _doc.password = '********';
@@ -571,7 +571,7 @@ app.get( '/docs', function( req, res ){
                       docs.push( _doc );
                     }
                   }
-                    */
+                  */
                   if( isDocReadableByUser( _doc, user ) || isDocStatusChangableByUser( _doc, user ) ){
                     docs.push( _doc );
                   }
@@ -759,7 +759,7 @@ app.post( '/user', function( req, res ){
   }
 });
 
-//. 新規作成
+//. 新規作成・更新
 app.post( '/document', function( req, res ){
   res.contentType( 'application/json; charset=utf-8' );
   console.log( 'POST /document' );
@@ -821,6 +821,10 @@ app.post( '/document', function( req, res ){
                         res.end();
                       }else{
                         //console.log( body );
+                        //doc.action = 'POST /document';
+                        //doc.actionBy = user;
+                        //addToHashChain( doc ).then( function( value ){} );
+
                         res.write( JSON.stringify( { status: true, message: body }, 2, null ) );
                         res.end();
                       }
@@ -835,6 +839,9 @@ app.post( '/document', function( req, res ){
                       res.end();
                     }else{
                       //console.log( body );
+                      //doc.action = 'POST /document';
+                      //doc.actionBy = user;
+                      //addToHashChain( doc ).then( function( value ){} );
                       res.write( JSON.stringify( { status: true, message: body }, 2, null ) );
                       res.end();
                     }
@@ -887,6 +894,9 @@ app.post( '/document', function( req, res ){
                   res.end();
                 }else{
                   //console.log( body );
+                  //doc.action = 'POST /document';
+                  //doc.actionBy = user;
+                  //addToHashChain( doc ).then( function( value ){} );
                   res.write( JSON.stringify( { status: true, message: body }, 2, null ) );
                   res.end();
                 }
@@ -901,83 +911,13 @@ app.post( '/document', function( req, res ){
                 res.end();
               }else{
                 //console.log( body );
+                //doc.action = 'POST /document';
+                //doc.actionBy = user;
+                //addToHashChain( doc ).then( function( value ){} );
                 res.write( JSON.stringify( { status: true, message: body }, 2, null ) );
                 res.end();
               }
             });
-          }
-        }
-      }
-    });
-  }
-});
-
-//.  更新
-app.put( '/document', function( req, res ){
-  res.contentType( 'application/json; charset=utf-8' );
-  console.log( 'PUT /document' );
-
-  var token = ( req.session && req.session.token ) ? req.session.token : null;
-  if( !token ){
-    res.status( 401 );
-    res.write( JSON.stringify( { status: false, result: 'No token provided.' }, 2, null ) );
-    res.end();
-  }else{
-    //. トークンをデコード
-    jwt.verify( token, app.get( 'superSecret' ), function( err, user ){
-      if( err ){
-        res.status( 401 );
-        res.write( JSON.stringify( { status: false, result: 'Invalid token.' }, 2, null ) );
-        res.end();
-      }else{
-        if( db ){
-          var id = req.body.id;
-          if( id ){
-            db.get( id, { include_docs: true }, function( err, doc ){
-              if( err ){
-                res.status( 400 );
-                res.write( JSON.stringify( { status: false, message: err }, 2, null ) );
-                res.end();
-              }else{
-                if( user._id == doc.user._id && doc.status == 0 ){
-                  Object.keys( req.body ).forEach( function( key ){
-                    if( key != 'id' ){
-                      if( key == 'tos' ){
-                        doc[key] = req.body[key].split( ',' );
-                      }else{
-                        doc[key] = req.body[key];
-                      }
-                    }
-                  });
-
-                  if( req.file == undefined ){
-                  }else{
-                    var filepath = req.file.path;
-                    var filetype = req.file.mimetype;
-                    var filename = req.file.originalname;
-                    if( filename && filepath ){
-                      var bin = fs.readFileSync( filepath );
-                      var bin64 = new Buffer( bin ).toString( 'base64' );
-                      generateHash( bin ).then( function( value ){
-                        doc[hash] = value;
-                      });
-                      doc['filename'] = filename;
-                    }
-                  }
-
-                  doc.timestamp = ( new Date() ).getTime();
-                  doc.type = 'document';
-                }else{
-                  res.status( 400 );
-                  res.write( JSON.stringify( { status: false, message: 'No permission.' }, 2, null ) );
-                  res.end();
-                }
-              }
-            });
-          }else{
-            res.status( 400 );
-            res.write( JSON.stringify( { status: false, message: 'parameter: id is required.' }, 2, null ) );
-            res.end();
           }
         }
       }
@@ -1025,6 +965,9 @@ app.post( '/document/status/:id', function( req, res ){
                     res.end();
                   }else{
                     //console.log( body );
+                    //doc.action = 'POST /document/status/' + id;
+                    //doc.actionBy = user;
+                    //addToHashChain( doc ).then( function( value ){} );
                     res.write( JSON.stringify( { status: true, message: body }, 2, null ) );
                     res.end();
                   }
@@ -1078,6 +1021,8 @@ app.delete( '/document/:id', function( req, res ){
                     res.write( JSON.stringify( { status: false, message: err }, 2, null ) );
                     res.end();
                   }else{
+                    //doc.action = 'DELETE /document/' + id;
+                    //addToHashChain( doc ).then( function( value ){} );
                     res.write( JSON.stringify( { status: true }, 2, null ) );
                     res.end();
                   }
@@ -1494,6 +1439,31 @@ function isDocStatusChangableByUser( doc, user ){
   }
 
   return b;
+}
+
+function addToHashChain( data ){
+  return new Promise( function( resolve, reject ){
+    if( data ){
+      var option = {
+        url: settings.hashchain_api_url + 'doc',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        json: data,
+      };
+      request( option, ( err, res, body ) => {
+        if( err ){
+          resolve( { status: false, message: err } );
+        }else{
+          reject( { status: true, message: body } );
+        }
+        return r;
+      });
+    }else{
+      reject( { status: false, message: 'No data found.' } );
+    }
+  });
 }
 
 
