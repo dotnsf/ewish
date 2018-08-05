@@ -985,6 +985,66 @@ app.post( '/document/status/:id', function( req, res ){
   }
 });
 
+app.post( '/document/statusback/:id', function( req, res ){
+  res.contentType( 'application/json; charset=utf-8' );
+  var id = req.params.id;
+  console.log( 'POST /document/statusback/' + id );
+
+  var token = ( req.session && req.session.token ) ? req.session.token : null;
+  if( !token ){
+    res.status( 401 );
+    res.write( JSON.stringify( { status: false, result: 'No token provided.' }, 2, null ) );
+    res.end();
+  }else{
+    //. トークンをデコード
+    jwt.verify( token, app.get( 'superSecret' ), function( err, user ){
+      if( err ){
+        res.status( 401 );
+        res.write( JSON.stringify( { status: false, result: 'Invalid token.' }, 2, null ) );
+        res.end();
+      }else{
+        db.get( id, function( err, doc ){
+          if( err ){
+            res.status( 400 );
+            res.write( JSON.stringify( { status: false, message: err }, 2, null ) );
+            res.end();
+          }else{
+            if( !doc.user || !doc.user.user_id ){
+              res.status( 400 );
+              res.write( JSON.stringify( { status: false, message: 'Could not find owner.' }, 2, null ) );
+              res.end();
+            }else{
+              if( isDocStatusChangableByUser( doc, user ) ){
+                doc.status = 0;
+                db.insert( doc, function( err, body ){ //. update
+                  if( err ){
+                    console.log( err );
+                    res.status( 400 );
+                    res.write( JSON.stringify( { status: false, message: err }, 2, null ) );
+                    res.end();
+                  }else{
+                    //console.log( body );
+                    //doc.action = 'POST /document/status/' + id;
+                    //doc.actionBy = user;
+                    //addToHashChain( doc ).then( function( value ){} );
+                    res.write( JSON.stringify( { status: true, message: body }, 2, null ) );
+                    res.end();
+                  }
+                });
+              }else{
+                res.status( 400 );
+                res.write( JSON.stringify( { status: false, message: 'No permission.' }, 2, null ) );
+                res.end();
+              }
+            }
+          }
+        });
+      }
+    });
+  }
+});
+
+
 
 app.delete( '/document/:id', function( req, res ){
   res.contentType( 'application/json; charset=utf-8' );
@@ -1409,7 +1469,7 @@ function isDocReadableByUser( doc, user ){
   var b = false;
 
   if( doc && doc._id.indexOf( '_' ) !== 0 && doc.type == 'document' && doc.user ){
-    if( ( doc.status == 1 && ( doc.tos.indexOf( user.user_id ) > -1 || doc.tos.indexOf( user.screen_name ) > -1 ) ) || ( doc.status == 0 && doc.user.user_id == user.user_id ) ){
+    if( ( doc.status == 1 && ( doc.tos.indexOf( user.user_id ) > -1 || doc.tos.indexOf( user.screen_name ) > -1 ) ) || ( /* doc.status == 0 && */ doc.user.user_id == user.user_id ) ){
       b = true;
     }
   }
@@ -1433,7 +1493,10 @@ function isDocStatusChangableByUser( doc, user ){
   var b = false;
 
   if( doc && doc._id.indexOf( '_' ) !== 0 && doc.type == 'document' && doc.user ){
-    if( doc.status == 0 && ( doc.tos.indexOf( user.user_id ) > -1 || doc.tos.indexOf( user.screen_name ) > -1 ) ){
+    if( 
+      ( doc.status == 0 && ( doc.tos.indexOf( user.user_id ) > -1 || doc.tos.indexOf( user.screen_name ) > -1 ) ) 
+      || ( doc.status == 1 && doc.user.screen_name == user.screen_name ) 
+    ){
       b = true;
     }
   }

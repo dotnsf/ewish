@@ -63,7 +63,11 @@ if( user != null ){
 
 <% if( user && user.screen_name ){ %>
               if( _doc.user.screen_name == "<%= user.screen_name %>" ){
-                div += "<input type='button' class='btn btn-xs btn-info doc-header-btn' value='<%= __('documents.buttonlabel.edit') %>' onClick='editDocument(" + JSON.stringify( _doc ) + ");'/><input type='button' class='btn btn-xs btn-warning doc-header-btn' value='<%= __('documents.buttonlabel.delete') %>' onClick='deleteDocument(\"" + _doc._id + "\");'/>";
+                if( _doc.status == 0 ){
+                  div += "<input type='button' class='btn btn-xs btn-info doc-header-btn' value='<%= __('documents.buttonlabel.edit') %>' onClick='editDocument(" + JSON.stringify( _doc ) + ");'/><input type='button' class='btn btn-xs btn-warning doc-header-btn' value='<%= __('documents.buttonlabel.delete') %>' onClick='deleteDocument(\"" + _doc._id + "\");'/>";
+                }else{
+                  div += "<input type='button' class='btn btn-xs btn-success doc-header-btn' value='<%= __('documents.buttonlabel.statusback') %>' onClick='statusBackDocument(\"" + _doc._id + "\");'/>";
+                }
               }else{
                 if( _doc.status == 0 ){
                   div += "<input type='button' class='btn btn-xs btn-danger doc-header-btn' value='<%= __('documents.buttonlabel.changestatus') %>' onClick='changeStatusDocument(\"" + _doc._id + "\");'/>";
@@ -136,7 +140,11 @@ function getDocuments(){
 
 <% if( user && user.screen_name ){ %>
           if( doc.user.screen_name == "<%= user.screen_name %>" ){
-            div += "<input type='button' class='btn btn-xs btn-info doc-header-btn' value='<%= __('documents.buttonlabel.edit') %>' onClick='editDocument(" + JSON.stringify( doc ) + ");'/><input type='button' class='btn btn-xs btn-warning doc-header-btn' value='<%= __('documents.buttonlabel.delete') %>' onClick='deleteDocument(\"" + doc._id + "\");'/>";
+            if( doc.status == 0 ){
+              div += "<input type='button' class='btn btn-xs btn-info doc-header-btn' value='<%= __('documents.buttonlabel.edit') %>' onClick='editDocument(" + JSON.stringify( doc ) + ");'/><input type='button' class='btn btn-xs btn-warning doc-header-btn' value='<%= __('documents.buttonlabel.delete') %>' onClick='deleteDocument(\"" + doc._id + "\");'/>";
+            }else{
+              div += "<input type='button' class='btn btn-xs btn-success doc-header-btn' value='<%= __('documents.buttonlabel.statusback') %>' onClick='statusBackDocument(\"" + doc._id + "\");'/>";
+            }
           }else{
             if( doc.status == 0 ){
               div += "<input type='button' class='btn btn-xs btn-danger doc-header-btn' value='<%= __('documents.buttonlabel.changestatus') %>' onClick='changeStatusDocument(\"" + doc._id + "\");'/>";
@@ -333,7 +341,25 @@ function changeStatusDocument(id){
       error: function( jqXHR, textStatus, errorThrown ){
         console.log( textStatus );
         console.log( errorThrown );
-        console.log( 'deleteDocument: error' );
+        console.log( 'changeStatusDocument: error' );
+      }
+    });
+  }
+}
+
+function statusBackDocument(id){
+  if( window.confirm( 'status back' + id + ' ?' ) ){
+    $.ajax({
+      type: 'POST',
+      url: '/document/statusback/' + id,
+      success: function( data ){
+        console.log( data );
+        getDocuments();
+      },
+      error: function( jqXHR, textStatus, errorThrown ){
+        console.log( textStatus );
+        console.log( errorThrown );
+        console.log( 'statusBackDocument: error' );
       }
     });
   }

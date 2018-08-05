@@ -39,5 +39,6 @@
 	"admin.body.documents.table.thead.timestamp": "timestamp",
 	"admin.body.documents.table.thead.actions": "actions",
 	"documents.placeholder.tos": "tos",
-	"documents.buttonlabel.changestatus": "change status"
+	"documents.buttonlabel.changestatus": "change status",
+	"documents.buttonlabel.statusback": "status back"
 }
