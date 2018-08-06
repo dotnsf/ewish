@@ -11,6 +11,7 @@ var jwt = require( 'jsonwebtoken' );
 var multer = require( 'multer' );
 var os = require( 'os' );
 var OAuth = require( 'oauth' );
+var request = require( 'request' );
 var session = require( 'express-session' );
 var uuidv1 = require( 'uuid/v1' );
 var app = express();
@@ -144,7 +145,8 @@ app.get( '/twitter/callback', function( req, res, next ){
       }
     });
   }else{
-    next( new Error( "you are not supposed to be here." ) );
+    //next( new Error( "you are not supposed to be here." ) );
+    res.redirect( '/' );
   }
 });
 
@@ -779,7 +781,7 @@ app.post( '/document', function( req, res ){
       }else{
         var tos = ( req.body.tos ? req.body.tos.split( "," ) : null );
         var body = req.body.body;
-       
+
         var id = req.body._id;
         if( id ){
           //. 更新
@@ -801,7 +803,7 @@ app.post( '/document', function( req, res ){
 
                   var bin = fs.readFileSync( filepath );
                   var bin64 = new Buffer( bin ).toString( 'base64' );
-  
+
                   doc.filename = filename;
                   generateHash( bin ).then( function( value ){
                     doc.hash = value;
@@ -811,7 +813,7 @@ app.post( '/document', function( req, res ){
                         data: bin64
                       }
                     };
-  
+
                     fs.unlink( filepath, function( err ){} );
                     db.insert( doc, function( err, body ){ //. update
                       if( err ){
@@ -821,9 +823,9 @@ app.post( '/document', function( req, res ){
                         res.end();
                       }else{
                         //console.log( body );
-                        //doc.action = 'POST /document';
-                        //doc.actionBy = user;
-                        //addToHashChain( doc ).then( function( value ){} );
+                        doc.action = 'POST /document';
+                        doc.actionBy = user;
+                        addToHashChain( doc ).then( function( value ){} );
 
                         res.write( JSON.stringify( { status: true, message: body }, 2, null ) );
                         res.end();
@@ -839,9 +841,9 @@ app.post( '/document', function( req, res ){
                       res.end();
                     }else{
                       //console.log( body );
-                      //doc.action = 'POST /document';
-                      //doc.actionBy = user;
-                      //addToHashChain( doc ).then( function( value ){} );
+                      doc.action = 'POST /document';
+                      doc.actionBy = user;
+                      addToHashChain( doc ).then( function( value ){} );
                       res.write( JSON.stringify( { status: true, message: body }, 2, null ) );
                       res.end();
                     }
@@ -874,7 +876,7 @@ app.post( '/document', function( req, res ){
 
             var bin = fs.readFileSync( filepath );
             var bin64 = new Buffer( bin ).toString( 'base64' );
-  
+
             doc.filename = filename;
             generateHash( bin ).then( function( value ){
               doc.hash = value;
@@ -894,9 +896,9 @@ app.post( '/document', function( req, res ){
                   res.end();
                 }else{
                   //console.log( body );
-                  //doc.action = 'POST /document';
-                  //doc.actionBy = user;
-                  //addToHashChain( doc ).then( function( value ){} );
+                  doc.action = 'POST /document';
+                  doc.actionBy = user;
+                  addToHashChain( doc ).then( function( value ){} );
                   res.write( JSON.stringify( { status: true, message: body }, 2, null ) );
                   res.end();
                 }
@@ -911,9 +913,9 @@ app.post( '/document', function( req, res ){
                 res.end();
               }else{
                 //console.log( body );
-                //doc.action = 'POST /document';
-                //doc.actionBy = user;
-                //addToHashChain( doc ).then( function( value ){} );
+                doc.action = 'POST /document';
+                doc.actionBy = user;
+                addToHashChain( doc ).then( function( value ){} );
                 res.write( JSON.stringify( { status: true, message: body }, 2, null ) );
                 res.end();
               }
@@ -965,9 +967,9 @@ app.post( '/document/status/:id', function( req, res ){
                     res.end();
                   }else{
                     //console.log( body );
-                    //doc.action = 'POST /document/status/' + id;
-                    //doc.actionBy = user;
-                    //addToHashChain( doc ).then( function( value ){} );
+                    doc.action = 'POST /document/status/' + id;
+                    doc.actionBy = user;
+                    addToHashChain( doc ).then( function( value ){} );
                     res.write( JSON.stringify( { status: true, message: body }, 2, null ) );
                     res.end();
                   }
@@ -1024,9 +1026,9 @@ app.post( '/document/statusback/:id', function( req, res ){
                     res.end();
                   }else{
                     //console.log( body );
-                    //doc.action = 'POST /document/status/' + id;
-                    //doc.actionBy = user;
-                    //addToHashChain( doc ).then( function( value ){} );
+                    doc.action = 'POST /document/statusback/' + id;
+                    doc.actionBy = user;
+                    addToHashChain( doc ).then( function( value ){} );
                     res.write( JSON.stringify( { status: true, message: body }, 2, null ) );
                     res.end();
                   }
@@ -1081,8 +1083,9 @@ app.delete( '/document/:id', function( req, res ){
                     res.write( JSON.stringify( { status: false, message: err }, 2, null ) );
                     res.end();
                   }else{
-                    //doc.action = 'DELETE /document/' + id;
-                    //addToHashChain( doc ).then( function( value ){} );
+                    doc.action = 'DELETE /document/' + id;
+                    doc.actionBy = user;
+                    addToHashChain( doc ).then( function( value ){} );
                     res.write( JSON.stringify( { status: true }, 2, null ) );
                     res.end();
                   }
@@ -1493,9 +1496,9 @@ function isDocStatusChangableByUser( doc, user ){
   var b = false;
 
   if( doc && doc._id.indexOf( '_' ) !== 0 && doc.type == 'document' && doc.user ){
-    if( 
-      ( doc.status == 0 && ( doc.tos.indexOf( user.user_id ) > -1 || doc.tos.indexOf( user.screen_name ) > -1 ) ) 
-      || ( doc.status == 1 && doc.user.screen_name == user.screen_name ) 
+    if(
+      ( doc.status == 0 && ( doc.tos.indexOf( user.user_id ) > -1 || doc.tos.indexOf( user.screen_name ) > -1 ) )
+      || ( doc.status == 1 && doc.user.screen_name == user.screen_name )
     ){
       b = true;
     }
@@ -1521,7 +1524,6 @@ function addToHashChain( data ){
         }else{
           reject( { status: true, message: body } );
         }
-        return r;
       });
     }else{
       reject( { status: false, message: 'No data found.' } );
