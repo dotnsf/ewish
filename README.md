@@ -59,58 +59,41 @@ eWish is electrical management system of our wishes with blockchain-related tech
     - You do **not** need to create database for this application on IBM Cloudant. If target database would not be existed, application would recognize it need to create new one, and also create some required design documents automatically when starting.
 
 
-## Setup
+## Install & Setup
 
-Under construction.
+- Login to IBM Cloud, and create IBM Cloudant service instance.
 
+- Check your service credential(username and password) of IBM Cloudant
 
-## Install
+- Git clone/download source files:
 
-Under construction.
+    - https://github.com/dotnsf/ewish
 
+- Edit settings.js with you IBM Cloudant username and password
 
-## Run on local server
+- (Optional)Edit **exports.app_port** value in settings.js to change application listening port(default 0).
 
-Under construction.
+- (Optional)Edit **exports.hashchain_api_url** value in settings.js to point hashchainsolo running platform.
 
+- (Optional)Edit **exports.twitter_consumer_key** value and **exports.twitter_consumer_secret** value in settings.js to change twitter API settings.
 
-## Run on IBM Cloud
+- Install dependencies:
 
-Under construction.
+    - `$ npm install`
 
+- Run
 
-## Create very first admin user(s)
-
-- You need to create user(s) with admin role(user.role = 0) just after you run application server at very first time.
-
-    - ``$ curl -XPOST -H 'Content-Type: application/json' 'http://localhost:3000/adminuser' -d '{"id":"abc@xyz.com","password":"yourpassword","name":"yourname","email":"abc@xyz.com"}'``
-
-    - You can omit "id" if you use default value("admin").
-
-    - You can omit "name" if you use same value of "id".
-
-    - You can omit "email" if you use default value("admin@admin").
-
-    - You can **NOT** omit "password".
-
-    - You can **NOT** set role. In this API, role would be always set to 0(zero), which means administrator.
-
-- After you create at least one admin role user(s), you can delete this REST API(POST /adminuser) from app.js
-
+    - `$ node app`
 
 ## Using web application
 
 - Browse with your web browser.
 
-    - For example. http://localhost:3000/
+    - For example. http://localhost:3001/
 
-- You can view current documents without login.
+- You can login with your twitter account from upper-right icon.
 
-- You can go administrative page from upper-right hotspot. You will be asked to login.
-
-    - Users, who have role=0, can create/edit/delete other users.
-
-    - All users can create/edit/delete documents and attachments.
+- After logging-in, you can create/edit/delete your ewishes. You can also attach file in your ewish.
 
 
 
